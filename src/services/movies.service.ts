@@ -90,4 +90,20 @@ export const moviesService = {
 
         }
     },
+    getMovieRecommendation: async (movieId: string | number) => {
+        try {
+            const movies = await get(`/3/movie/${movieId}/recommendations?language=en-US&page=1`);
+            
+            const { data } = movies;
+
+            return response.ok(data);
+
+        } catch (error) {
+
+            console.error(error);
+
+            return response.error(error)
+
+        }
+    },
 }

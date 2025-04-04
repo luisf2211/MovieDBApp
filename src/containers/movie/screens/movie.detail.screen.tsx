@@ -1,4 +1,4 @@
-import { RouteProp, useRoute } from '@react-navigation/native';
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Text, View, Image, FlatList } from 'react-native';
 import { RootStackParamList } from '../../../navigation/app.navigator';
@@ -7,6 +7,9 @@ import { moviesService } from '../../../services/movies.service';
 import { MOVIE_ASSETS_URL } from '../../../utils/constants';
 import AsyncStorageClient from '../../../apis/async.storage.client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MovieResponseType } from '../../../types/MoviesServiceTypes';
+import { Button } from '@ui-kitten/components';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type MovieDetailRouteProp = RouteProp<RootStackParamList, 'MovieDetailScreen'>;
 
@@ -59,12 +62,13 @@ const MovieActorComponent: React.FC<{ actor: MovieActorProp }> = ({ actor }) => 
 
 const MovieDetailScreen: React.FC = () => {
     const route = useRoute<MovieDetailRouteProp>();
-
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const [genres, setGenres] = useState<MovieGenreProp[]>([]);
     const [actors, setActors] = useState<MovieActorProp[]>([]);
     const [startingValue, setStartingValue] = useState<string | number | null>(0);
+    const [movieRecommendations, setMovieRecommendations] = useState<MovieResponseType[]>([]);
 
-    const { getMovieById, getCast, rateMovie } = moviesService;
+    const { getMovieById, getCast, rateMovie, getMovieRecommendation } = moviesService;
 
     const {
         id,
@@ -114,6 +118,39 @@ const MovieDetailScreen: React.FC = () => {
 
     useEffect(() => {
         const doRequest = async () => {
+            const response = await getMovieRecommendation(id);
+
+            const { ok, value } = response;
+
+            if (!ok) {
+                alert('Ha ocurrido un error al intentar obtener las recomendaciones.');
+                return;
+            }
+
+
+            const { results } = value;
+
+            const _results = results.map((result: MovieResponseType) => {
+                const { id, title, overview, poster_path, vote_average, vote_count, release_date } = result;
+                return {
+                    id,
+                    title,
+                    overview,
+                    poster_path,
+                    vote_average: Math.round(vote_average),
+                    vote_count,
+                    release_date
+                }
+            }).sort((a: MovieResponseType, b: MovieResponseType) => a.title.localeCompare(b.title));
+
+            setMovieRecommendations(_results);
+        }
+
+        doRequest();
+    }, []);
+
+    useEffect(() => {
+        const doRequest = async () => {
             const storedValue = await AsyncStorage.getItem(`voto_pelicula_${id}`);
             setStartingValue(storedValue);
         }
@@ -123,7 +160,7 @@ const MovieDetailScreen: React.FC = () => {
 
     const ratingCompleted = async (rating: number) => {
         const _token = await AsyncStorageClient.getItem('guest_session_id');
-        
+
         const { ok } = await rateMovie(id, _token, rating)
 
         if (!ok) {
@@ -177,12 +214,18 @@ const MovieDetailScreen: React.FC = () => {
                             {overview}
                         </Text>
                     </View>
-                    
+
+                    <View style={{}}>
+                        <Button onPress={() => navigation.navigate('MovieListRecommendationScreen', {movies: movieRecommendations})} >
+                            Ver recomendaciones
+                        </Button>
+                    </View>
+
                     <View>
                         <Text style={{ textAlign: 'justify', paddingBottom: 10 }}>
                             Dejanos tu voto:
                         </Text>
-                        <Rating imageSize={25} startingValue={startingValue} ratingCount={10} ratingColor="#3498db" onFinishRating={ratingCompleted} /> 
+                        <Rating imageSize={25} startingValue={startingValue} ratingCount={10} ratingColor="#3498db" onFinishRating={ratingCompleted} />
                     </View>
                 </View>
             }

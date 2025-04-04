@@ -4,11 +4,17 @@ import CustomNavbarComponent from '../components/custom.navbar/custom.navbar.com
 import MovieContainer from '../containers/movie/movie.container';
 import MovieListScreen from '../containers/movie/screens/movie.list.screen';
 import MovieDetailScreen from '../containers/movie/screens/movie.detail.screen';
+import { MovieResponseType } from '../types/MoviesServiceTypes';
 
 
 export type RootStackParamList = {
     Home: undefined;
-    MovieListScreen: undefined,
+    MovieListScreen: {
+        movies: MovieResponseType[]
+    },
+    MovieListRecommendationScreen: {
+        movies: MovieResponseType[]
+    },
     MovieDetailScreen: {
         id: number,
         image: string,
@@ -33,6 +39,15 @@ const AppNavigator = () => {
                 }}
             />
 
+            <Stack.Screen
+                name={'MovieListRecommendationScreen'}
+                component={MovieListScreen}
+                options={{
+                    headerShown: true,
+                    header: () => <CustomNavbarComponent title='Recomendaciones' />
+                }}
+            />
+            
             <Stack.Screen
                 name={'MovieListScreen'}
                 component={MovieListScreen}

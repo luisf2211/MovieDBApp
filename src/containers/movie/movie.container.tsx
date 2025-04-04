@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, Image, TouchableOpacity } from 'react-native';
 import { CustomViewPagerComponent } from '../../components/custom.viewpager/custom.viewpage.component';
 import { useNavigation } from '@react-navigation/native';
@@ -8,7 +8,6 @@ import { moviesService } from '../../services/movies.service';
 import { MovieResponseType } from '../../types/MoviesServiceTypes';
 import HeroComponent from './components/hero.component';
 import ThumbnailComponent from './components/thumbnail.component';
-import { useMovies } from '../../context/MoviesContext';
 import { Icon } from 'react-native-elements';
 import { MOVIE_ASSETS_URL } from '../../utils/constants';
 import AsyncStorageClient from '../../apis/async.storage.client';
@@ -18,7 +17,7 @@ const MovieContainer: React.FC = () => {
 
     const { getGuestSessionId, getNowPlayingMovies } = moviesService;
 
-    const { movies, addMovies } = useMovies();
+    const [movies, setMovies] = useState<MovieResponseType[]>([]);
 
     useEffect(() => {
       const doRequest = async () => {
@@ -62,7 +61,7 @@ const MovieContainer: React.FC = () => {
                 }
             }).sort((a: MovieResponseType, b: MovieResponseType) => a.title.localeCompare(b.title));
 
-            addMovies(_results);
+            setMovies(_results);
         }
 
         doRequest();
@@ -75,7 +74,7 @@ const MovieContainer: React.FC = () => {
                     <HeroComponent.Title>
                         Reproduciendo ahora
                     </HeroComponent.Title>
-                    <HeroComponent.Description onPress={() => navigation.navigate('MovieListScreen')}>
+                    <HeroComponent.Description onPress={() => navigation.navigate('MovieListScreen', {movies})}>
                         Ver listado
                     </HeroComponent.Description>
                 </HeroComponent.HeroHeader>
@@ -97,7 +96,7 @@ const MovieContainer: React.FC = () => {
                         })
                     }
                     <View style={{ flex: 1 }}>
-                        <TouchableOpacity style={styles.touchOpacityStyle} onPress={() => navigation.navigate('MovieListScreen')} activeOpacity={1}>
+                        <TouchableOpacity style={styles.touchOpacityStyle} onPress={() => navigation.navigate('MovieListScreen', {movies})} activeOpacity={1}>
                             <Text style={{ color: '#032541', fontSize: 20, padding: 12, letterSpacing: 0.8, textAlign: 'center' }}>
                                 Ver listado de peliculas
                             </Text>
